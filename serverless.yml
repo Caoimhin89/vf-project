@@ -68,6 +68,20 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: voicefoundry-assignment-databucket
+    Database:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: voicefoundry-s3upload-metadata-table
+        AttributeDefinitions:
+          - AttributeName: object_key
+            AttributeType: S
+        KeySchema:
+          - AttributeName: object_key
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
