@@ -19,6 +19,7 @@ service: assignment
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
 frameworkVersion: '2'
+region: us-east-1
 
 provider:
   name: aws
@@ -36,6 +37,25 @@ custom:
 functions:
   hello:
     handler: handler.hello
+  uploadObjectParser:
+    handler: handler.uploadObjectParser
+    events:
+      - s3: 
+        bucket: 
+          Fn:Join:
+            - ""
+            - - "Ref" : "DataBucket"
+        event: s3:ObjectCreated:*
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:dynamodb:${self:provider:region}:*:table/"
+            - "Ref" : "Database"
+            - "/*"
 
 resources:
   Transform: AmazonConnectProvider
