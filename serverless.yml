@@ -38,6 +38,7 @@ functions:
     handler: handler.hello
 
 resources:
+  Transform: AmazonConnectProvider
   Resources:
     DataBucket:
       Type: AWS::S3::Bucket
@@ -56,6 +57,47 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+    CallCenter:
+      Type: AWS::Connect::Instance
+      Properties:
+        Domain: "voicefoundry-assignment"
+    CallCenterContactFlow:
+      Type: AWS::Connect::ContactFlow
+      Properties:
+        ConnectInstance:  !GetAtt CallCenter.Domain
+        Name: simpleCallFlow
+        Description: a very simple contact flow
+        States:
+          - Id: play
+            Start: true
+            Type: PlayPrompt
+            Parameters:
+              - Name: Text
+                Value: Thank you for calling my sample contact center. Ready to get fancy with this project?
+              - Name: TextToSpeechType
+                Value: text
+            Branches:
+              - Destination: disconnect
+                Condition: Success
+          - Id: disconnect
+            Type: Disconnect
+    ContactCenterPhoneNumber:
+      Type: AWS::Connect::PhoneNumber
+      Properties:
+        ConnectInstance: !GetAtt CallCenter.Domain
+        ContactFlow: !GetAtt CallCenterContactFlow.Name
+        Type: DID
+        Country: United States
+        Description: phone number for direct-inward-dial calls
+    
+  Outputs:
+    ConnectOutput:
+      Description: call center DID phone number
+      Value: !GetAtt ContactCenterPhoneNumber.PhoneNumber
+
+
+
+
 
 # you can overwrite defaults here
 #  stage: dev
