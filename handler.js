@@ -1,15 +1,43 @@
 'use strict';
 const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
 
 module.exports.s3ObjectExtractor = (event) => {
   return event.Records[0].s3.object;
 };
 
+module.exports.getContentFromS3Obj = async (bucket, key) => {
+  const params = {
+    Bucket: bucket,
+    Key: key
+  };
+
+  try {
+    const res = await s3.getObject(params).promise();
+    return res.Body.toString('utf-8');
+  } catch(err) {
+    console.error('S3GetObject Failed', JSON.stringify(err));
+    console.error('RAW', err);
+    throw(err);
+  }
+}
+
 module.exports.uploadObjectParser = async (event) => {
   const putObject = module.exports.s3ObjectExtractor(event);
+  const bucketName = event.Records[0].s3.bucket.name;
 
-  // save upload data to dynamodb
+  // add object data to the payload
+  try {
+    putObject.content = await module.exports.getContentFromS3Obj(bucketName, putObject.key)
+  } catch(err) {
+    return {
+      statusCode: 500,
+      FunctionError: err
+    };
+  }
+
+  // save payload to dynamodb
   const params = {
     TableName: process.env.UPLOAD_OBJECT_METADATA_TABLE,
     Item: putObject

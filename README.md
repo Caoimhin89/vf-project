@@ -1,11 +1,11 @@
-*Big thanks* to @ian0036 for his work in creating a CloudFormatioon Transform for Amazon Connect!!
+*Big thanks* to @ian0036 for his work in creating a CloudFormation Transform for Amazon Connect!!
 
 His repository can be found here: [Link to Repo](https://github.com/iann0036/amazon-connect-cfn)
 
-This is required to be able to deploy the stack with Amazon Connect. It was a little bit outdated, so I forked it and reimplemented the Lambda function to make use of the AWS SDK helper functions for Amazon Connect. That can be found here: [my fork'd version](https://github.com/Caoimhin89/amazon-connect-cfn.git)
+This is a required element to be able to deploy the stack with Amazon Connect. It was a little bit outdated, so I forked it and reimplemented the Lambda function to make use of the AWS SDK helper functions for Amazon Connect. That can be found here: [my fork'd version](https://github.com/Caoimhin89/amazon-connect-cfn.git)
 
 
-# Voice Foundry Assignment
+# VoiceFoundry Assignment
 
 ## Objective
 To make this more fun, I decided to add a requirement to the project. I'm keeping all the original requirements, but instead of just uploading a nondescript file to S3 and transferring its data to a DynamoDB table, I plan to upload an agent directory CSV to S3 and use that to update an Amazon Connect instance, which I plan to also create in this project.
@@ -26,7 +26,7 @@ To make this more fun, I decided to add a requirement to the project. I'm keepin
     * and also reported here:
         * [GitHub Issue Report](https://github.com/aws/aws-sdk-js/issues/3557)
     
-    * In short, when I called createInstance() via the aws-sdk for nodeJS from the Lambda function, it returned a successful response, but actually failed to create the instance. So this turned out to be the first serious obstacle I needed to overcome to accomplish my goal.
+    * In short, when I called createInstance() via the aws-sdk for nodeJS from the Lambda function, it returned a successful response, but actually failed to create the instance. So this turned out to be the first serious obstacle it will be necessary to overcome in order to achieve the objective.
 
     ### Day 2
     * Step 1: Added jestJS for unit tests
