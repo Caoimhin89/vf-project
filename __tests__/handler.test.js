@@ -3,11 +3,6 @@ const uuid = require('uuidv4');
 const handler = require('../handler');
 const testEvents = require('../test-events');
 
-test('hello, world', async () => {
-  const response = await handler.hello();
-  expect(JSON.parse(response.body).message).toBe("Hello, world!");
-});
-
 test('retrieve object data from S3 PutObject event', async () => {
   const { putObject } = testEvents;
   const response = await handler.s3ObjectExtractor(putObject);

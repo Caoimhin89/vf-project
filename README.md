@@ -27,3 +27,11 @@ To make this more fun, I decided to add a requirement to the project. I'm keepin
         * [GitHub Issue Report](https://github.com/aws/aws-sdk-js/issues/3557)
     
     In short, when I called createInstance() via the aws-sdk for nodeJS from the Lambda function, it returned a successful response, but actually failed to create the instance. So this turned out to be the first serious obstacle I needed to overcome to accomplish my goal.
+
+    ### Day 2
+    * Step 1: Added jestJS for unit tests
+    * Step 2: Added lambda function to handle PutObject events on S3 and save to DynamoDB
+    * Step 3: Added some unit tests
+    * Step 4: I put the Amazon Connect issue on hold to focus on completing the core challenge
+    * Step 5: Added IAM role to Lambda function with the necessary policies to enable it to perform its function
+    * Step 6: Updated the DynamoDB keys to use the key of the S3 upload object as HashKey and the sequencer attribute as RangeKey.
