@@ -35,3 +35,22 @@ To make this more fun, I decided to add a requirement to the project. I'm keepin
     * Step 4: I put the Amazon Connect issue on hold to focus on completing the core challenge
     * Step 5: Added IAM role to Lambda function with the necessary policies to enable it to perform its function
     * Step 6: Updated the DynamoDB keys to use the key of the S3 upload object as HashKey and the sequencer attribute as RangeKey.
+
+    ### Day 3
+    Back to trying to get the Connect Instance set-up through CloudFormation. The createInstance operation in the aws sdk seems not to work, so I went back to using puppeteer for the creation of the instance, while relying on the SDK for deletion. Mostly a lot of back and forth occurred here, making changes to the code, deploying, reviewing logs and debug screenshots, and adjusting the code accordingly until it worked.
+
+    ### Day 4
+    I finally got the Amazon Connect CloudFormation Transform working. I commited my changes to the forked repo for the Transform and created a new [Pull Request](https://github.com/iann0036/amazon-connect-cfn/pull/7). So, returning to the assignment, I've now gotten things to the point where upon deployment, the following takes place:
+
+    * DynamoDB Table is created
+    * S3 Bucket is created
+    * Lambda function deploys
+    * Files are uploaded to the S3 Bucket & the Lambda responds by saving the file data to the DynamoDB Table
+    * A Connect Instance is launched
+    * A Simple Disconnect ContactFlow is defined and associated with the Connect Instance
+    * A Phone Number is reserved and associated with the ContactFlow
+
+    Now for the next step:
+
+    If a .csv file is uploaded to our Bucket, the Lambda handler responding the the CreateObject event should check to see
+    if the uploaded file contains agent data. If so, it should create an agent for each entry in the CSV and associate that agent with the Connect instance.

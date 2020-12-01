@@ -41,15 +41,22 @@ functions:
           bucket: voicefoundry-assignment-databucket
           event: s3:ObjectCreated:*
           existing: true
+  agentRosterManager:
+    handler: handler.agentRosterManager
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [AgentRosterTable, StreamArn]
 
 resources:
-#  Transform: AmazonConnectProvider
+  Transform: AmazonConnectProvider
   Resources:
     DataBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: voicefoundry-assignment-databucket
-    Database:
+    UploadsMetadataTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: voicefoundry-s3upload-metadata-table
@@ -63,6 +70,19 @@ resources:
             KeyType: HASH
           - AttributeName: sequencer
             KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    AgentRosterTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: voicefoundry-agent-roster-table
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: key
+            KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
@@ -117,43 +137,43 @@ resources:
                       - - "arn:aws:s3:::"
                         - "Ref" : "DataBucket"
                         - "/*"
-  #   CallCenter:
-  #     Type: AWS::Connect::Instance
-  #     Properties:
-  #       Domain: "voicefoundry-assignment"
-  #   CallCenterContactFlow:
-  #     Type: AWS::Connect::ContactFlow
-  #     Properties:
-  #       ConnectInstance:  !GetAtt CallCenter.Domain
-  #       Name: simpleCallFlow
-  #       Description: a very simple contact flow
-  #       States:
-  #         - Id: play
-  #           Start: true
-  #           Type: PlayPrompt
-  #           Parameters:
-  #             - Name: Text
-  #               Value: Thank you for calling my sample contact center. Ready to get fancy with this project?
-  #             - Name: TextToSpeechType
-  #               Value: text
-  #           Branches:
-  #             - Destination: disconnect
-  #               Condition: Success
-  #         - Id: disconnect
-  #           Type: Disconnect
-  #   ContactCenterPhoneNumber:
-  #     Type: AWS::Connect::PhoneNumber
-  #     Properties:
-  #       ConnectInstance: !GetAtt CallCenter.Domain
-  #       ContactFlow: !GetAtt CallCenterContactFlow.Name
-  #       Type: DID
-  #       Country: United States
-  #       Description: phone number for direct-inward-dial calls
+    CallCenter:
+      Type: AWS::Connect::Instance
+      Properties:
+        Domain: voicefoundry-assignment
+    CallCenterContactFlow:
+      Type: AWS::Connect::ContactFlow
+      Properties:
+        ConnectInstance:  !GetAtt CallCenter.Domain
+        Name: simpleCallFlow
+        Description: a very simple contact flow
+        States:
+          - Id: play
+            Start: true
+            Type: PlayPrompt
+            Parameters:
+              - Name: Text
+                Value: Thank you for calling my sample contact center. I appreciate the opportunity you've given me to demonstrate my technical skills and personal dedication.
+              - Name: TextToSpeechType
+                Value: text
+            Branches:
+              - Destination: disconnect
+                Condition: Success
+          - Id: disconnect
+            Type: Disconnect
+    ContactCenterPhoneNumber:
+      Type: AWS::Connect::PhoneNumber
+      Properties:
+        ConnectInstance: !GetAtt CallCenter.Domain
+        ContactFlow: !GetAtt CallCenterContactFlow.Name
+        Type: DID
+        Country: United States
+        Description: phone number for direct-inward-dial calls
     
-  # Outputs:
-  #   ConnectOutput:
-  #     Description: call center DID phone number
-  #     Value: !GetAtt ContactCenterPhoneNumber.PhoneNumber
+  Outputs:
+    ConnectOutput:
+      Description: call center DID phone number
+      Value: !GetAtt ContactCenterPhoneNumber.PhoneNumber
 
 
 

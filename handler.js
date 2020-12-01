@@ -3,6 +3,8 @@ const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 
+// ------------- HELPER FUNCTIONS -----------------
+
 module.exports.s3ObjectExtractor = (event) => {
   return event.Records[0].s3.object;
 };
@@ -21,8 +23,10 @@ module.exports.getContentFromS3Obj = async (bucket, key) => {
     console.error('RAW', err);
     throw(err);
   }
-}
+};
 
+
+// Lambda Function
 module.exports.uploadObjectParser = async (event) => {
   const putObject = module.exports.s3ObjectExtractor(event);
   const bucketName = event.Records[0].s3.bucket.name;
