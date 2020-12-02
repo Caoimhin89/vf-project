@@ -4,6 +4,7 @@
   "description": "*Big thanks* to @ian0036 for his work in creating a CloudFormatioon Transform for Amazon Connect!!",
   "main": "handler.js",
   "dependencies": {
+    "csvtojson": "^2.0.10",
     "jest": "^26.6.3",
     "serverless-s3-sync": "^1.15.0",
     "uuidv4": "^6.2.5"
