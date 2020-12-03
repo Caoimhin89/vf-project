@@ -1,73 +1,22 @@
 'use strict';
-const csvtojson = require('csvtojson');
 const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
-
-// ------------- HELPER FUNCTIONS -----------------
-
-module.exports.s3ObjectExtractor = (event) => {
-  return event.Records[0].s3.object;
-};
-
-module.exports.getContentFromS3Obj = async (bucket, key) => {
-  const params = {
-    Bucket: bucket,
-    Key: key
-  };
-
-  try {
-    const res = await s3.getObject(params).promise();
-    return res.Body.toString('utf-8');
-  } catch (err) {
-    console.error('S3GetObject Failed', JSON.stringify(err));
-    console.error('RAW', err);
-    throw (err);
-  }
-};
-
-module.exports.isCSV = (s3Obj) => {
-  const len = s3Obj.key.split('.').length;
-  return (s3Obj.key.split('.')[len - 1].toLowerCase() === 'csv') ? true : false;
-};
-
-module.exports.parseCsv = async (csvString) => {
-  return await csvtojson().fromString(csvString);
-};
-
-module.exports.genDbAgentParams = (instance, objArray) => {
-  return objArray.map(agent => {
-    return ({
-      InstanceId: instance,
-      PhoneConfig: {
-        PhoneType: agent.phoneType,
-        AfterContactWorkTimeLimit: agent.ACW,
-        AutoAccept: true,
-        DeskPhoneNumber: agent['phone number']
-      },
-      RoutingProfileId: agent['routing profile name'],
-      SecurityProfileIds: agent.securityProfiles.split('|'),
-      Username: agent['user login'],
-      HierarchyGroupId: agent.userHierarchy,
-      IdentityInfo: {
-        Email: agent.emailAddress,
-        FirstName: agent.firstName,
-        LastName: agent.lastName
-      },
-      Password: agent.password
-    });
-  });
-}
+const connect = new AWS.Connect();
+const { s3ObjectExtractor, 
+        getContentFromS3Obj,
+        isCSV,
+        parseCsv} = require('./helpers');
 
 
 // ------------ LAMBDA FUNCTIONS ---------------------------
 module.exports.uploadObjectParser = async (event) => {
-  const putObject = module.exports.s3ObjectExtractor(event);
+  const putObject = s3ObjectExtractor(event);
   const bucketName = event.Records[0].s3.bucket.name;
 
   // add object data to the payload
   try {
-    putObject.content = await module.exports.getContentFromS3Obj(bucketName, putObject.key)
+    putObject.content = await getContentFromS3Obj(bucketName, putObject.key)
   } catch (err) {
     return {
       statusCode: 500,
@@ -75,11 +24,23 @@ module.exports.uploadObjectParser = async (event) => {
     };
   }
 
+  const params = {};
+
+  // check if uploaded object is csv file
+  if(isCSV(putObject)) {
+    const csvRows = putObject.content.split('\n');
+    csvRows[0] = normalizeCsvHeaders(csvRows[0]);
+    const csv = csvRows.join('\n');
+    const jsonRoster = await parseCsv(csv);
+
+    params.TableName = process.env.AGENT_ROSTER_TABLE;
+    params.Item = jsonRoster;
+  } else {
+    params.TableName = process.env.UPLOAD_OBJECT_METADATA_TABLE;
+    params.Item = putObject;
+  }
+
   // save payload to dynamodb
-  const params = {
-    TableName: process.env.UPLOAD_OBJECT_METADATA_TABLE,
-    Item: putObject
-  };
   console.debug('PARAMS', JSON.stringify(params));
   try {
     const res = await db.put(params).promise();
@@ -106,4 +67,76 @@ module.exports.uploadObjectParser = async (event) => {
       null
     )
   };
+};
+
+
+module.exports.agentRosterManager = async (event) => {
+  console.debug('EVENT', JSON.stringify(event));
+
+  const requests = [];
+  let instance;
+  try {
+    const res = await connect.listInstances({}).promise();
+    instance = res.InstanceSummaryList.filter(x => x.InstanceAlias === process.env.CONNECT_ALIAS)[0];
+  } catch(err) {
+    console.error('ListInstances Failed', JSON.stringify(err));
+    console.error('RAW', err);
+
+    // FATAL: return failure response
+    return {
+      statusCode: 500,
+      functionError: err
+    }
+  }
+
+  const params = {
+    InstanceId: instance.Id
+  };
+
+  for(const record of event.Records) {
+    const agent = record.NewImage;
+    params.PhoneConfig = {
+      PhoneType: agent.PhoneType.S,
+      AfterContactWorkTimeLimit: agent.AfterContactWorkTimeLimit.N,
+      AutoAccept: agent.AutoAccept.BOOL,
+      DeskPhoneNumber: agent.PhoneNumber.S
+    };
+    params.RoutingProfileId = agent.RoutingProfileName.S;
+    params.SecurityProfileIds = agent.SecurityProfiles.S.split('|');
+    params.Username = agent.UserLogin.S;
+    params.HierarchyGroupId = agent.Hierarchy.S;
+    params.IdentityInfo = {
+      Email: agent.EmailAddress,
+      FirstName: agent.FirstName,
+      LastName: agent.LastName
+    };
+    params.Password = await getAgentPassword(email);
+
+    // send createUser request
+    requests.push(connect.createUser(params).promise());
+  }
+
+  // resolve all requests
+  let results;
+  try {
+    results = await Promise.all(requests);
+  } catch(err) {
+    console.error('Create Users Failed', JSON.stringify(err));
+    console.error('RAW', err);
+
+    // send failure response
+    return {
+      statusCode: 500,
+      functionError: err
+    };
+  }
+
+  // send success response
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: 'Success!',
+      payload: results
+    })
+  }
 };
