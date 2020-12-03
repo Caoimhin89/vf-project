@@ -51,10 +51,10 @@ module.exports.parseCsv = async (csvString) => {
   return await csvtojson().fromString(csvString);
 };
 
-module.exports.genDbAgentParams = (tableName, instanceId, agent) => {
+module.exports.genDbAgentParams = (tableName, instanceAlias, agent) => {
   return ({
     TableName: tableName,
-    InstanceId: instanceId,
+    InstanceAlias: instanceAlias,
     Item: {
       PhoneConfig: {
         PhoneType: agent.PhoneType,

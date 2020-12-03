@@ -6,7 +6,8 @@ const connect = new AWS.Connect();
 const { s3ObjectExtractor, 
         getContentFromS3Obj,
         isCSV,
-        parseCsv} = require('./helpers');
+        parseCsv,
+        genDbAgentParams} = require('./helpers');
 
 
 // ------------ LAMBDA FUNCTIONS ---------------------------
@@ -24,20 +25,20 @@ module.exports.uploadObjectParser = async (event) => {
     };
   }
 
-  const params = {};
-
-  // check if uploaded object is csv file
+  // prepare db params
+  let params;
   if(isCSV(putObject)) {
     const csvRows = putObject.content.split('\n');
     csvRows[0] = normalizeCsvHeaders(csvRows[0]);
     const csv = csvRows.join('\n');
     const jsonRoster = await parseCsv(csv);
-
-    params.TableName = process.env.AGENT_ROSTER_TABLE;
-    params.Item = jsonRoster;
+    
+    params = genDbAgentParams(process.env.AGENT_ROSTER_TABLE, process.env.CONNECT_ALIAS, jsonRoster);
   } else {
-    params.TableName = process.env.UPLOAD_OBJECT_METADATA_TABLE;
-    params.Item = putObject;
+    params = {
+      TableName = process.env.UPLOAD_OBJECT_METADATA_TABLE,
+      Item = putObject
+    };
   }
 
   // save payload to dynamodb
