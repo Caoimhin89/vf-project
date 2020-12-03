@@ -56,8 +56,9 @@ To make this more fun, I decided to add a requirement to the project. I'm keepin
     if the uploaded file contains agent data. If so, it should create an agent for each entry in the CSV and associate that agent with the Connect Instance. It's also probably better to keep our agent data separate from the other data we're storing in the DynamoDB table, so I'll create a separate Table just for agent data. It's also not really a great idea to store passwords in Dynamo, even if it's encrypted, so I'll store the agents' passwords in Secrets Manager, instead.
 
     ### Day 5
-    The serverless.yml file has been updated to create the additional resources needed to meet the new requirements.
+    I updated the serverless.yml file to create the additional resources needed to meet the new requirements.
     * DynamoDB Table to store Agent Data
     * Lambda function to respond to events from the Stream associated with the new Table and create new Connect Users whenever a new Agent record is inserted into the Table.
+    * An IAM role with the appropriate policies to allow the Lambda to do its job
     
-    I also created a new suite of Jest unit tests to ensure the Lambda function code behaves as anticipated.
+    I also created a new suite of Jest unit tests to ensure the Lambda function code behaves as anticipated and then proceeded to build out the function logic until the tests passed.
