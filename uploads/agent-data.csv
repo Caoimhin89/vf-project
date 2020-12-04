@@ -1,3 +1,3 @@
 first name,last name,email address,password,user login,routing profile name,security_profile_name_1|security_profile_name_2,phone type (soft/desk),phone number,soft phone auto accept (yes/no),ACW timeout (seconds),UserHierarchy
-Kevin,Glick,kevin.n.glick@gmail.com,F@keP@ssw0rd,kglick,Basic Routing Profile,CallCenterManager,SOFT_PHONE,,yes,30,technical support/IT/Eastern
+Kevin,Glick,kevin.n.glick@gmail.com,F@keP@ssw0rd,kglick,Basic Routing Profile,CallCenterManager,SOFT_PHONE,,yes,60,technical support/IT/Eastern
 Caoimhin,Glick,my@fakeemail.com,F@keP@ssw0rd,cglick,Basic Routing Profile,CallCenterManager,DESK_PHONE,+12162823930,no,0,general inquiries

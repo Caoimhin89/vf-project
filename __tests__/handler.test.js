@@ -79,12 +79,11 @@ test('can generate dynamodb putItem params for an agent object', async () => {
   const params = helpers.genDbAgentParams('my-table', 'my-instance', agentArray[0]);
 
   expect(typeof params).toBe('object');
-  console.log(params);
   for(let attr of expectedAttrs) {
     expect(params.Item[attr] !== 'undefined' || 
     params.Item.IdentityInfo[attr] !== 'undefined' || 
     params.Item.PhoneConfig[attr] !== 'undefined').toBe(true);
   }
   expect(params.TableName).toBe('my-table');
-  expect(params.InstanceId).toBe('my-instance');
+  expect(params.InstanceAlias).toBe('my-instance');
 });

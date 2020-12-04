@@ -2,6 +2,7 @@
 const csvtojson = require('csvtojson');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
+const secretsManager = new AWS.SecretsManager();
 
 // ------------- HELPER FUNCTIONS -----------------
 
@@ -56,6 +57,7 @@ module.exports.genDbAgentParams = (tableName, instanceAlias, agent) => {
     TableName: tableName,
     InstanceAlias: instanceAlias,
     Item: {
+      Email: agent.EmailAddress,
       PhoneConfig: {
         PhoneType: agent.PhoneType,
         AfterContactWorkTimeLimit: agent.AcwTimeout,
@@ -73,4 +75,19 @@ module.exports.genDbAgentParams = (tableName, instanceAlias, agent) => {
       }
     }
   });
+};
+
+module.exports.getAgentPassword = async (email) => {
+  const credParams = {
+    SecretId: `${email}_Connect_Password`
+  };
+  
+  try {
+    const res = await secretsManager.getSecretValue(credParams).promise();
+    return res.SecretString;
+  } catch(err) {
+    console.error('GetSecretValue Failed', JSON.stringify(err));
+    console.error('RAW', err);
+    throw err;
+  }
 };

@@ -20,9 +20,12 @@ custom:
 functions:
   uploadObjectParser:
     handler: handler.uploadObjectParser
+    timeout: 60
     role: UploadObjectParserRole
     environment:
       UPLOAD_OBJECT_METADATA_TABLE: voicefoundry-s3upload-metadata-table
+      AGENT_ROSTER_TABLE: voicefoundry-agent-roster-table
+      CONNECT_ALIAS: voicefoundry-assignment
     events:
       - s3:
           bucket: voicefoundry-assignment-databucket
@@ -30,6 +33,10 @@ functions:
           existing: true
   agentRosterManager:
     handler: handler.agentRosterManager
+    timeout: 60
+    role: AgentRosterManagerRole
+    environment:
+      CONNECT_ALIAS: voicefoundry-assignment
     events:
       - stream:
           type: dynamodb
@@ -65,14 +72,16 @@ resources:
       Properties:
         TableName: voicefoundry-agent-roster-table
         AttributeDefinitions:
-          - AttributeName: email
+          - AttributeName: Email
             AttributeType: S
         KeySchema:
-          - AttributeName: key
+          - AttributeName: Email
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
     UploadObjectParserRole:
       Type: AWS::IAM::Role
       Properties:
@@ -114,6 +123,13 @@ resources:
                         - ":*:table/"
                         - voicefoundry-s3upload-metadata-table
                         - "*"
+                    - Fn::Join:
+                      - ""
+                      - - "arn:aws:dynamodb:"
+                        - Ref : "AWS::Region"
+                        - ":*:table/"
+                        - voicefoundry-agent-roster-table
+                        - "*"
                 - Effect: Allow
                   Action:
                     - s3:ListBucket
@@ -124,6 +140,13 @@ resources:
                       - - "arn:aws:s3:::"
                         - "Ref" : "DataBucket"
                         - "/*"
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:CreateSecret
+                    - kms:GenerateDataKey
+                    - kms:Decrypt
+                    - secretsmanager:TagResource
+                  Resource: "*"
     AgentRosterManagerRole:
       Type: AWS::IAM::Role
       Properties:
@@ -137,7 +160,7 @@ resources:
                   - lambda.amazonaws.com
               Action: sts:AssumeRole
         ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AmazonConnect_FullAccess
+          - arn:aws:iam::aws:policy/AmazonConnect_FullAccess
         Policies:
           - PolicyName: DynamoDBStreamReader
             PolicyDocument:
@@ -181,6 +204,11 @@ resources:
                       - - "arn:aws:s3:::"
                         - "Ref" : "DataBucket"
                         - "/*"
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:GetSecretValue
+                    - kms:Decrypt
+                  Resource: "*"
     CallCenter:
       Type: AWS::Connect::Instance
       Properties:
@@ -213,7 +241,7 @@ resources:
         Type: DID
         Country: United States
         Description: phone number for direct-inward-dial calls
-    
+outputs:  
   Outputs:
     ConnectOutput:
       Description: call center DID phone number
